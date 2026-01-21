@@ -295,11 +295,11 @@ function downloadImage(imageSrc, caption) {
     img.crossOrigin = 'anonymous'; // Cho phép vẽ ảnh từ cùng origin
     
     img.onload = function() {
-        // Kích thước hiển thị từ CSS (giống như trong index.html)
-        const displayWidth = 450;  // max-width của carousel-container
-        const displayHeight = 500; // height của carousel-item
-        
-        // Tạo canvas với kích thước hiển thị
+        // Dùng đúng kích thước gốc của ảnh để giữ chất lượng
+        const displayWidth = img.naturalWidth;
+        const displayHeight = img.naturalHeight;
+
+        // Tạo canvas với kích thước gốc
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
@@ -329,16 +329,13 @@ function downloadImage(imageSrc, caption) {
         // Vẽ ảnh lên canvas với kích thước và vị trí đã tính
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         
-        // Font size tương đương 1.2rem (16px * 1.2 = 19.2px trên màn hình chuẩn)
-        // Nhưng với ảnh 500px cao, ta scale cho phù hợp
-        const fontSize = displayHeight * 0.0384; // ~19.2px cho ảnh 500px
-        
-        // Padding tương đương 20px
-        const paddingX = 20;
-        const paddingY = 20;
+        // Font size và padding tỉ lệ theo chiều cao ảnh (giống tỷ lệ trước đây)
+        const fontSize = displayHeight * 0.0384; // ~3.84% chiều cao
+        const paddingX = displayHeight * 0.04;   // ~4% chiều cao
+        const paddingY = displayHeight * 0.04;   // ~4% chiều cao
         
         // Vẽ gradient overlay ở phía dưới (giống như CSS)
-        const gradientHeight = displayHeight * 0.25; // Chiều cao gradient
+        const gradientHeight = displayHeight * 0.25; // 25% chiều cao
         const gradient = ctx.createLinearGradient(0, canvas.height - gradientHeight, 0, canvas.height);
         gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
