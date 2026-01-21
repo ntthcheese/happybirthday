@@ -1,531 +1,748 @@
-// Birthday Website JavaScript - Music Player
-// Tất cả các hiệu ứng và tương tác được xử lý ở đây
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Khởi tạo các hiệu ứng khi trang load
-    initializeAnimations();
-    initializeCarousel();
-    initializeSurpriseButton();
-    initializeMusicPlayer();
-    initializeImageModal();
-    createConfetti();
-});
-
-// Khởi tạo music player với Web Audio API
-function initializeMusicPlayer() {
-    const musicBtn = document.getElementById('musicBtn');
-    const birthdayAudio = document.getElementById('birthdayAudio');
-    let isPlaying = false;
-
-    // Đảm bảo audio sẵn sàng
-    birthdayAudio.volume = 0.7; // âm lượng vừa phải
-
-    musicBtn.addEventListener('click', async () => {
-        try {
-            if (!isPlaying) {
-                await birthdayAudio.play();
-                musicBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause Birthday Song</span>';
-                musicBtn.classList.add('playing');
-                isPlaying = true;
-            } else {
-                birthdayAudio.pause();
-                musicBtn.innerHTML = '<i class="fas fa-music"></i><span>Play Birthday Song</span>';
-                musicBtn.classList.remove('playing');
-                isPlaying = false;
-            }
-        } catch (err) {
-            console.error("Không thể phát nhạc:", err);
-            musicBtn.innerHTML = '<i class="fas fa-music"></i><span>Audio not supported</span>';
-        }
-    });
+/* Reset và Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-// Tạo nhạc Happy Birthday bằng Web Audio API
-function playHappyBirthdaySong() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Nốt nhạc Happy Birthday (tần số Hz)
-        const notes = [
-            { freq: 261.63, duration: 0.5 }, // C4
-            { freq: 261.63, duration: 0.5 }, // C4
-            { freq: 293.66, duration: 1.0 }, // D4
-            { freq: 261.63, duration: 1.0 }, // C4
-            { freq: 349.23, duration: 1.0 }, // F4
-            { freq: 329.63, duration: 2.0 }, // E4
-        ];
-        
-        let currentTime = audioContext.currentTime;
-        
-        notes.forEach((note, index) => {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(note.freq, currentTime);
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + note.duration);
-            
-            oscillator.start(currentTime);
-            oscillator.stop(currentTime + note.duration);
-            
-            currentTime += note.duration;
-        });
-        
-        // Lặp lại sau khi kết thúc
-        setTimeout(() => {
-            if (isPlaying) {
-                playHappyBirthdaySong();
-            }
-        }, currentTime * 1000);
-        
-    } catch (error) {
-        console.log('Cannot create audio context:', error);
-        musicBtn.innerHTML = '<i class="fas fa-music"></i><span>Audio not supported</span>';
+body {
+    font-family: 'Inter', 'Poppins', 'Segoe UI', 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    font-feature-settings: "liga" 1, "kern" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Confetti Container */
+#confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ff6b9d;
+    animation: confetti-fall 3s linear infinite;
+}
+
+.confetti:nth-child(2n) {
+    background: #ffc0cb;
+    animation-delay: 0.5s;
+}
+
+.confetti:nth-child(3n) {
+    background: #ffb6c1;
+    animation-delay: 1s;
+}
+
+.confetti:nth-child(4n) {
+    background: #ff69b4;
+    animation-delay: 1.5s;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
     }
 }
 
-// Khởi tạo carousel cho hình ảnh
-function initializeCarousel() {
-    const carousel = document.getElementById('carousel');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const indicators = document.querySelectorAll('.indicator');
-    
-    let currentSlide = 0;
-    const totalSlides = carousel.children.length;
-    
-    // Hàm chuyển slide
-    function goToSlide(slideIndex) {
-        currentSlide = slideIndex;
-        carousel.style.transform = `translateX(-${currentSlide * 100}%)`;
-        
-        // Cập nhật indicators
-        indicators.forEach((indicator, index) => {
-            indicator.classList.toggle('active', index === currentSlide);
-        });
-    }
-    
-    // Event listeners cho nút điều hướng
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-            goToSlide(currentSlide);
-        });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            currentSlide = (currentSlide + 1) % totalSlides;
-            goToSlide(currentSlide);
-        });
-    }
-    
-    // Event listeners cho indicators
-    indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', () => {
-            goToSlide(index);
-        });
-    });
-    
-    // Auto-play carousel - tự động chạy ngang
-    setInterval(() => {
-        currentSlide = (currentSlide + 1) % totalSlides;
-        goToSlide(currentSlide);
-    }, 3000); // Chuyển slide mỗi 3 giây
-    
-    // Thêm hiệu ứng hover cho hình ảnh
-    const images = document.querySelectorAll('.carousel-image');
-    images.forEach(img => {
-        img.addEventListener('mouseenter', () => {
-            img.style.transform = 'scale(1.05)';
-        });
-        
-        img.addEventListener('mouseleave', () => {
-            img.style.transform = 'scale(1)';
-        });
-        
-        // Thêm sự kiện click để mở preview
-        img.addEventListener('click', () => {
-            const carouselItem = img.closest('.carousel-item');
-            const caption = carouselItem.querySelector('.image-caption').textContent;
-            const imageSrc = img.getAttribute('src');
-            openImageModal(imageSrc, caption);
-        });
-        
-        // Thêm cursor pointer để người dùng biết có thể click
-        img.style.cursor = 'pointer';
-    });
+/* Floating Elements */
+.floating-elements {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
 }
 
-// Biến để lưu trữ danh sách ảnh và ảnh hiện tại
-let imageList = [];
-let currentImageIndex = 0;
-
-// Khởi tạo danh sách ảnh từ carousel
-function initializeImageList() {
-    const carouselItems = document.querySelectorAll('.carousel-item');
-    imageList = Array.from(carouselItems).map(item => {
-        const img = item.querySelector('.carousel-image');
-        const caption = item.querySelector('.image-caption');
-        return {
-            src: img.getAttribute('src'),
-            caption: caption.textContent
-        };
-    });
+.floating-item {
+    position: absolute;
+    font-size: 2rem;
+    animation: float 6s ease-in-out infinite;
+    opacity: 0.7;
 }
 
-// Hàm mở modal preview ảnh
-function openImageModal(imageSrc, caption) {
-    // Tìm index của ảnh hiện tại
-    currentImageIndex = imageList.findIndex(img => img.src === imageSrc);
-    if (currentImageIndex === -1) {
-        currentImageIndex = 0;
-    }
-    
-    updateModalImage();
-    const modal = document.getElementById('imageModal');
-    modal.style.display = 'flex';
+.floating-item:nth-child(1) {
+    left: 10%;
+    animation-delay: 0s;
 }
 
-// Hàm cập nhật ảnh trong modal
-function updateModalImage() {
-    const modalImage = document.getElementById('modalImage');
-    const modalCaption = document.getElementById('modalImageCaption');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const prevBtn = document.getElementById('modalPrevBtn');
-    const nextBtn = document.getElementById('modalNextBtn');
-    
-    const currentImage = imageList[currentImageIndex];
-    
-    modalImage.src = currentImage.src;
-    modalCaption.textContent = currentImage.caption;
-    
-    // Thiết lập sự kiện download
-    downloadBtn.onclick = () => {
-        downloadImage(currentImage.src, currentImage.caption);
-    };
-    
-    // Cập nhật trạng thái nút prev/next
-    if (prevBtn) {
-        prevBtn.style.display = imageList.length > 1 ? 'flex' : 'none';
+.floating-item:nth-child(2) {
+    left: 20%;
+    animation-delay: 1s;
+}
+
+.floating-item:nth-child(3) {
+    left: 50%;
+    animation-delay: 2s;
+}
+
+.floating-item:nth-child(4) {
+    left: 80%;
+    animation-delay: 3s;
+}
+
+.floating-item:nth-child(5) {
+    left: 90%;
+    animation-delay: 4s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
     }
-    if (nextBtn) {
-        nextBtn.style.display = imageList.length > 1 ? 'flex' : 'none';
+    10% {
+        opacity: 0.7;
+    }
+    90% {
+        opacity: 0.7;
+    }
+    50% {
+        transform: translateY(-10vh) scale(1);
     }
 }
 
-// Hàm chuyển đến ảnh tiếp theo
-function nextModalImage() {
-    currentImageIndex = (currentImageIndex + 1) % imageList.length;
-    updateModalImage();
+/* Main Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 10;
 }
 
-// Hàm chuyển đến ảnh trước đó
-function prevModalImage() {
-    currentImageIndex = (currentImageIndex - 1 + imageList.length) % imageList.length;
-    updateModalImage();
+/* Header Styles */
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInUp 1s ease-out;
 }
 
-// Hàm đóng modal
-function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    modal.style.display = 'none';
+.main-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+    animation: glow 2s ease-in-out infinite alternate;
 }
 
-// Khởi tạo modal preview
-function initializeImageModal() {
-    const modal = document.getElementById('imageModal');
-    const closeBtn = document.querySelector('.modal-close');
-    const prevBtn = document.getElementById('modalPrevBtn');
-    const nextBtn = document.getElementById('modalNextBtn');
-    
-    // Khởi tạo danh sách ảnh
-    initializeImageList();
-    
-    // Đóng modal khi click vào nút X
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeImageModal);
+.name-highlight {
+    color: #ff69b4;
+    text-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+    font-family: 'Inter', 'Poppins', 'Segoe UI', 'Roboto', sans-serif;
+    font-weight: 700;
+    font-feature-settings: "liga" 1, "kern" 1;
+    text-rendering: optimizeLegibility;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 105, 180, 0.5);
     }
-    
-    // Nút previous
-    if (prevBtn) {
-        prevBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            prevModalImage();
-        });
-    }
-    
-    // Nút next
-    if (nextBtn) {
-        nextBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            nextModalImage();
-        });
-    }
-    
-    // Đóng modal khi click bên ngoài
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeImageModal();
-        }
-    });
-    
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        if (modal.style.display === 'flex') {
-            if (e.key === 'Escape') {
-                closeImageModal();
-            } else if (e.key === 'ArrowLeft') {
-                prevModalImage();
-            } else if (e.key === 'ArrowRight') {
-                nextModalImage();
-            }
-        }
-    });
-}
-
-// Hàm tải xuống ảnh với text được vẽ lên
-function downloadImage(imageSrc, caption) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // Cho phép vẽ ảnh từ cùng origin
-    
-    img.onload = function() {
-        // Kích thước hiển thị từ CSS (giống như trong index.html)
-        const displayWidth = 450;  // max-width của carousel-container
-        const displayHeight = 500; // height của carousel-item
-        
-        // Tạo canvas với kích thước hiển thị
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-        
-        // Tính toán để crop và scale ảnh giống object-fit: cover
-        const imgAspect = img.width / img.height;
-        const canvasAspect = displayWidth / displayHeight;
-        
-        let drawWidth, drawHeight, drawX, drawY;
-        
-        if (imgAspect > canvasAspect) {
-            // Ảnh rộng hơn, crop theo chiều ngang
-            drawHeight = displayHeight;
-            drawWidth = drawHeight * imgAspect;
-            drawX = (displayWidth - drawWidth) / 2;
-            drawY = 0;
-        } else {
-            // Ảnh cao hơn, crop theo chiều dọc
-            drawWidth = displayWidth;
-            drawHeight = drawWidth / imgAspect;
-            drawX = 0;
-            drawY = (displayHeight - drawHeight) / 2;
-        }
-        
-        // Vẽ ảnh lên canvas với kích thước và vị trí đã tính
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        
-        // Font size tương đương 1.2rem (16px * 1.2 = 19.2px trên màn hình chuẩn)
-        // Nhưng với ảnh 500px cao, ta scale cho phù hợp
-        const fontSize = displayHeight * 0.0384; // ~19.2px cho ảnh 500px
-        
-        // Padding tương đương 20px
-        const paddingX = 20;
-        const paddingY = 20;
-        
-        // Vẽ gradient overlay ở phía dưới (giống như CSS)
-        const gradientHeight = displayHeight * 0.25; // Chiều cao gradient
-        const gradient = ctx.createLinearGradient(0, canvas.height - gradientHeight, 0, canvas.height);
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, canvas.height - gradientHeight, canvas.width, gradientHeight);
-        
-        // Thiết lập font và style cho text
-        ctx.font = `600 ${fontSize}px 'Poppins', 'Inter', sans-serif`;
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'bottom';
-        
-        // Thêm text shadow effect
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = fontSize * 0.1;
-        ctx.shadowOffsetX = fontSize * 0.05;
-        ctx.shadowOffsetY = fontSize * 0.05;
-        
-        // Vẽ text ở góc dưới bên trái
-        const x = paddingX;
-        const y = canvas.height - paddingY;
-        
-        ctx.fillText(caption, x, y);
-        
-        // Chuyển canvas thành blob và download
-        canvas.toBlob(function(blob) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            const fileName = caption.replace(/\s+/g, '_').toLowerCase() + '.jpg';
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }, 'image/jpeg', 0.95);
-    };
-    
-    img.onerror = function() {
-        // Fallback: download ảnh gốc nếu có lỗi
-        const link = document.createElement('a');
-        link.href = imageSrc;
-        const fileName = caption.replace(/\s+/g, '_').toLowerCase() + '.jpg';
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-    
-    img.src = imageSrc;
-}
-
-// Khởi tạo các animation cơ bản
-function initializeAnimations() {
-    // Thêm hiệu ứng typing cho tiêu đề chính
-    const mainTitle = document.getElementById('main-title');
-    if (mainTitle) {
-        setTimeout(() => {
-            mainTitle.classList.add('typing');
-        }, 1000);
-    }
-    
-    // Tạo hiệu ứng floating elements liên tục
-    createFloatingElements();
-}
-
-// Tạo hiệu ứng confetti
-function createConfetti() {
-    const confettiContainer = document.getElementById('confetti-container');
-    const colors = ['#ff6b9d', '#ffc0cb', '#ffb6c1', '#ff69b4', '#ff1493'];
-    
-    // Tạo confetti ban đầu
-    for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-            createConfettiPiece(confettiContainer, colors);
-        }, i * 100);
-    }
-    
-    // Tạo confetti định kỳ
-    setInterval(() => {
-        createConfettiPiece(confettiContainer, colors);
-    }, 2000);
-}
-
-function createConfettiPiece(container, colors) {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    confetti.style.left = Math.random() * 100 + '%';
-    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
-    confetti.style.animationDelay = Math.random() * 2 + 's';
-    
-    container.appendChild(confetti);
-    
-    // Xóa confetti sau khi animation kết thúc
-    setTimeout(() => {
-        if (confetti.parentNode) {
-            confetti.parentNode.removeChild(confetti);
-        }
-    }, 5000);
-}
-
-// Tạo floating elements liên tục
-function createFloatingElements() {
-    const elementsContainer = document.querySelector('.floating-elements');
-    const elements = ['🎈', '🎂', '🎁', '✨', '🌟', '🎀', '🎊', '🎉'];
-    
-    setInterval(() => {
-        const element = document.createElement('div');
-        element.className = 'floating-item';
-        element.textContent = elements[Math.floor(Math.random() * elements.length)];
-        element.style.left = Math.random() * 100 + '%';
-        element.style.animationDuration = (Math.random() * 3 + 4) + 's';
-        
-        elementsContainer.appendChild(element);
-        
-        // Xóa element sau khi animation kết thúc
-        setTimeout(() => {
-            if (element.parentNode) {
-                element.parentNode.removeChild(element);
-            }
-        }, 7000);
-    }, 3000);
-}
-
-// Khởi tạo nút surprise
-function initializeSurpriseButton() {
-    const surpriseBtn = document.getElementById('surpriseBtn');
-    const surpriseContent = document.getElementById('surpriseContent');
-    const surpriseSection = document.querySelector('.surprise-section');
-    
-    if (surpriseBtn && surpriseContent && surpriseSection) {
-        surpriseBtn.addEventListener('click', () => {
-            // Hiển thị nội dung surprise
-            surpriseContent.classList.add('show');
-            
-            // Tự động scroll đến surprise section
-            surpriseSection.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'center' 
-            });
-            
-            // Tạo hiệu ứng pháo hoa
-            createFireworkEffect();
-            
-            // Tạo thêm confetti khi click surprise
-            createSurpriseConfetti();
-            
-            // Ẩn nút sau khi click
-            surpriseBtn.style.display = 'none';
-            
-            // Hiển thị lại nút sau 5 giây
-            setTimeout(() => {
-                surpriseBtn.style.display = 'inline-block';
-                surpriseContent.classList.remove('show');
-            }, 60000);
-        });
+    to {
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 30px rgba(255, 105, 180, 0.8);
     }
 }
 
-// Tạo hiệu ứng pháo hoa
-function createFireworkEffect() {
-    const surpriseContent = document.getElementById('surpriseContent');
-    const firework = surpriseContent.querySelector('.firework');
-    
-    if (firework) {
-        firework.style.animation = 'none';
-        firework.offsetHeight; // Trigger reflow
-        firework.style.animation = 'firework-explode 1s ease-out';
+.subtitle {
+    animation: fadeInUp 1s ease-out 0.5s both;
+}
+
+.date-text {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.wish-text {
+    font-size: 1.2rem;
+    color: #fff;
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Image Carousel */
+.image-section {
+    margin-bottom: 40px;
+    animation: fadeInUp 1s ease-out 1s both;
+}
+
+.carousel-container {
+    position: relative;
+    max-width: 450px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.carousel {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-item {
+    min-width: 100%;
+    position: relative;
+    height: 500px;
+}
+
+.carousel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.carousel-image:hover {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    padding: 20px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.image-caption {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-family: 'Poppins', 'Inter', sans-serif;
+    margin-left: 0;
+    padding: 0;
+}
+
+/* Carousel Controls */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #ff69b4;
+    transition: all 0.3s ease;
+    z-index: 20;
+}
+
+.carousel-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.prev {
+    left: 20px;
+}
+
+.next {
+    right: 20px;
+}
+
+/* Carousel Indicators */
+.carousel-indicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 20;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicator.active {
+    background: #ff69b4;
+    transform: scale(1.2);
+}
+
+/* Surprise Section */
+.surprise-section {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInUp 1s ease-out 1.5s both;
+}
+
+.surprise-btn {
+    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+}
+
+.surprise-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.6);
+}
+
+.surprise-btn:active {
+    transform: translateY(-1px);
+}
+
+.surprise-content {
+    margin-top: 30px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.5s ease;
+}
+
+.surprise-content.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.firework {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    background: radial-gradient(circle, #ff69b4, #ffc0cb, transparent);
+    border-radius: 50%;
+    animation: firework-explode 1s ease-out;
+}
+
+@keyframes firework-explode {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
     }
 }
 
-// Tạo confetti đặc biệt khi click surprise
-function createSurpriseConfetti() {
-    const confettiContainer = document.getElementById('confetti-container');
-    const colors = ['#ff6b9d', '#ffc0cb', '#ffb6c1', '#ff69b4', '#ff1493', '#ffb6c1'];
-    
-    // Tạo nhiều confetti hơn
-    for (let i = 0; i < 100; i++) {
-        setTimeout(() => {
-            createConfettiPiece(confettiContainer, colors);
-        }, i * 20);
+.message h2 {
+    font-size: 2rem;
+    color: #fff;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.message p {
+    font-size: 1.2rem;
+    color: #fff;
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Music Section */
+.music-section {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInUp 1s ease-out 2s both;
+}
+
+.music-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    backdrop-filter: blur(10px);
+}
+
+.music-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.music-btn.playing {
+    background: rgba(255, 105, 180, 0.3);
+    border-color: #ff69b4;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    animation: fadeInUp 1s ease-out 2.5s both;
+}
+
+.footer-text {
+    font-size: 1.3rem;
+    color: #fff;
+    font-weight: 500;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    line-height: 1.6;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-// Console message cho developer
-console.log('🎉 Happy Birthday Website loaded successfully!');
-console.log('🎵 Music player with Web Audio API');
-console.log('✨ Enjoy the animations and effects!');
+/* Typing Animation */
+.typing {
+    overflow: hidden;
+    border-right: 3px solid #ff69b4;
+    white-space: nowrap;
+    animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: #ff69b4; }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .main-title {
+        font-size: 2.5rem;
+    }
+    
+    .date-text {
+        font-size: 1.5rem;
+    }
+    
+    .wish-text {
+        font-size: 1rem;
+    }
+    
+    .carousel-item {
+        height: 400px;
+    }
+    
+    .carousel-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .prev {
+        left: 10px;
+    }
+    
+    .next {
+        right: 10px;
+    }
+    
+    .surprise-btn {
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+    
+    .message h2 {
+        font-size: 1.5rem;
+    }
+    
+    .message p {
+        font-size: 1rem;
+    }
+    
+    .footer-text {
+        font-size: 1.1rem;
+    }
+}
+
+/* Image Preview Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90vh;
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-image-container {
+    position: relative;
+    width: 450px;
+    height: 500px;
+    display: inline-block;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.modal-content img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+}
+
+.modal-image-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-family: 'Poppins', 'Inter', sans-serif;
+    pointer-events: none;
+    padding: 20px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid white;
+    background: transparent;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close:hover {
+    color: #ff1493;
+    transform: rotate(90deg);
+    border-color: #ff1493;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Navigation Buttons */
+.modal-nav-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #ff69b4;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.modal-nav-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+    color: #ff1493;
+}
+
+.modal-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.download-btn {
+    background: linear-gradient(45deg, #ff69b4, #ffc0cb);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.6);
+    background: linear-gradient(45deg, #ff1493, #ff69b4);
+}
+
+.download-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .date-text {
+        font-size: 1.3rem;
+    }
+    
+    .carousel-item {
+        height: 350px;
+    }
+    
+    .carousel-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .prev {
+        left: 5px;
+    }
+    
+    .next {
+        right: 5px;
+    }
+    
+    .modal-content {
+        max-width: 95%;
+        padding: 15px;
+    }
+    
+    .modal-image-container {
+        width: 100%;
+        max-width: 450px;
+        height: 400px;
+    }
+    
+    .modal-nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .modal-caption {
+        font-size: 1.2rem;
+    }
+    
+    .download-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-image-container {
+        height: 350px;
+    }
+    
+    .modal-nav-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .modal-actions {
+        gap: 10px;
+    }
+    
+    .download-btn {
+        padding: 10px 15px;
+        font-size: 0.85rem;
+    }
+}
