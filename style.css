@@ -535,8 +535,8 @@ body {
 
 .modal-image-container {
     position: relative;
-    width: 450px;
-    height: 500px;
+    width: min(450px, 90vw);
+    aspect-ratio: 9 / 10; /* cùng tỷ lệ như carousel (450x500) */
     display: inline-block;
     margin-bottom: 20px;
     border-radius: 10px;
@@ -707,7 +707,7 @@ body {
     .modal-image-container {
         width: 100%;
         max-width: 450px;
-        height: 400px;
+        aspect-ratio: 9 / 10;
     }
     
     .modal-nav-btn {
@@ -728,7 +728,9 @@ body {
 
 @media (max-width: 480px) {
     .modal-image-container {
-        height: 350px;
+        width: 100%;
+        max-width: 450px;
+        aspect-ratio: 9 / 10;
     }
     
     .modal-nav-btn {
