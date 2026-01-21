@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCarousel();
     initializeSurpriseButton();
     initializeMusicPlayer();
+    initializeImageModal();
     createConfetti();
 });
 
@@ -147,7 +148,248 @@ function initializeCarousel() {
         img.addEventListener('mouseleave', () => {
             img.style.transform = 'scale(1)';
         });
+        
+        // Thêm sự kiện click để mở preview
+        img.addEventListener('click', () => {
+            const carouselItem = img.closest('.carousel-item');
+            const caption = carouselItem.querySelector('.image-caption').textContent;
+            const imageSrc = img.getAttribute('src');
+            openImageModal(imageSrc, caption);
+        });
+        
+        // Thêm cursor pointer để người dùng biết có thể click
+        img.style.cursor = 'pointer';
     });
+}
+
+// Biến để lưu trữ danh sách ảnh và ảnh hiện tại
+let imageList = [];
+let currentImageIndex = 0;
+
+// Khởi tạo danh sách ảnh từ carousel
+function initializeImageList() {
+    const carouselItems = document.querySelectorAll('.carousel-item');
+    imageList = Array.from(carouselItems).map(item => {
+        const img = item.querySelector('.carousel-image');
+        const caption = item.querySelector('.image-caption');
+        return {
+            src: img.getAttribute('src'),
+            caption: caption.textContent
+        };
+    });
+}
+
+// Hàm mở modal preview ảnh
+function openImageModal(imageSrc, caption) {
+    // Tìm index của ảnh hiện tại
+    currentImageIndex = imageList.findIndex(img => img.src === imageSrc);
+    if (currentImageIndex === -1) {
+        currentImageIndex = 0;
+    }
+    
+    updateModalImage();
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'flex';
+}
+
+// Hàm cập nhật ảnh trong modal
+function updateModalImage() {
+    const modalImage = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalImageCaption');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const prevBtn = document.getElementById('modalPrevBtn');
+    const nextBtn = document.getElementById('modalNextBtn');
+    
+    const currentImage = imageList[currentImageIndex];
+    
+    modalImage.src = currentImage.src;
+    modalCaption.textContent = currentImage.caption;
+    
+    // Thiết lập sự kiện download
+    downloadBtn.onclick = () => {
+        downloadImage(currentImage.src, currentImage.caption);
+    };
+    
+    // Cập nhật trạng thái nút prev/next
+    if (prevBtn) {
+        prevBtn.style.display = imageList.length > 1 ? 'flex' : 'none';
+    }
+    if (nextBtn) {
+        nextBtn.style.display = imageList.length > 1 ? 'flex' : 'none';
+    }
+}
+
+// Hàm chuyển đến ảnh tiếp theo
+function nextModalImage() {
+    currentImageIndex = (currentImageIndex + 1) % imageList.length;
+    updateModalImage();
+}
+
+// Hàm chuyển đến ảnh trước đó
+function prevModalImage() {
+    currentImageIndex = (currentImageIndex - 1 + imageList.length) % imageList.length;
+    updateModalImage();
+}
+
+// Hàm đóng modal
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+}
+
+// Khởi tạo modal preview
+function initializeImageModal() {
+    const modal = document.getElementById('imageModal');
+    const closeBtn = document.querySelector('.modal-close');
+    const prevBtn = document.getElementById('modalPrevBtn');
+    const nextBtn = document.getElementById('modalNextBtn');
+    
+    // Khởi tạo danh sách ảnh
+    initializeImageList();
+    
+    // Đóng modal khi click vào nút X
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeImageModal);
+    }
+    
+    // Nút previous
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevModalImage();
+        });
+    }
+    
+    // Nút next
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextModalImage();
+        });
+    }
+    
+    // Đóng modal khi click bên ngoài
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeImageModal();
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (modal.style.display === 'flex') {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            } else if (e.key === 'ArrowLeft') {
+                prevModalImage();
+            } else if (e.key === 'ArrowRight') {
+                nextModalImage();
+            }
+        }
+    });
+}
+
+// Hàm tải xuống ảnh với text được vẽ lên
+function downloadImage(imageSrc, caption) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // Cho phép vẽ ảnh từ cùng origin
+    
+    img.onload = function() {
+        // Kích thước hiển thị từ CSS (giống như trong index.html)
+        const displayWidth = 450;  // max-width của carousel-container
+        const displayHeight = 500; // height của carousel-item
+        
+        // Tạo canvas với kích thước hiển thị
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        
+        // Tính toán để crop và scale ảnh giống object-fit: cover
+        const imgAspect = img.width / img.height;
+        const canvasAspect = displayWidth / displayHeight;
+        
+        let drawWidth, drawHeight, drawX, drawY;
+        
+        if (imgAspect > canvasAspect) {
+            // Ảnh rộng hơn, crop theo chiều ngang
+            drawHeight = displayHeight;
+            drawWidth = drawHeight * imgAspect;
+            drawX = (displayWidth - drawWidth) / 2;
+            drawY = 0;
+        } else {
+            // Ảnh cao hơn, crop theo chiều dọc
+            drawWidth = displayWidth;
+            drawHeight = drawWidth / imgAspect;
+            drawX = 0;
+            drawY = (displayHeight - drawHeight) / 2;
+        }
+        
+        // Vẽ ảnh lên canvas với kích thước và vị trí đã tính
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        
+        // Font size tương đương 1.2rem (16px * 1.2 = 19.2px trên màn hình chuẩn)
+        // Nhưng với ảnh 500px cao, ta scale cho phù hợp
+        const fontSize = displayHeight * 0.0384; // ~19.2px cho ảnh 500px
+        
+        // Padding tương đương 20px
+        const paddingX = 20;
+        const paddingY = 20;
+        
+        // Vẽ gradient overlay ở phía dưới (giống như CSS)
+        const gradientHeight = displayHeight * 0.25; // Chiều cao gradient
+        const gradient = ctx.createLinearGradient(0, canvas.height - gradientHeight, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, canvas.height - gradientHeight, canvas.width, gradientHeight);
+        
+        // Thiết lập font và style cho text
+        ctx.font = `600 ${fontSize}px 'Poppins', 'Inter', sans-serif`;
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        
+        // Thêm text shadow effect
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = fontSize * 0.1;
+        ctx.shadowOffsetX = fontSize * 0.05;
+        ctx.shadowOffsetY = fontSize * 0.05;
+        
+        // Vẽ text ở góc dưới bên trái
+        const x = paddingX;
+        const y = canvas.height - paddingY;
+        
+        ctx.fillText(caption, x, y);
+        
+        // Chuyển canvas thành blob và download
+        canvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const fileName = caption.replace(/\s+/g, '_').toLowerCase() + '.jpg';
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 'image/jpeg', 0.95);
+    };
+    
+    img.onerror = function() {
+        // Fallback: download ảnh gốc nếu có lỗi
+        const link = document.createElement('a');
+        link.href = imageSrc;
+        const fileName = caption.replace(/\s+/g, '_').toLowerCase() + '.jpg';
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    
+    img.src = imageSrc;
 }
 
 // Khởi tạo các animation cơ bản
@@ -286,5 +528,4 @@ function createSurpriseConfetti() {
 // Console message cho developer
 console.log('🎉 Happy Birthday Website loaded successfully!');
 console.log('🎵 Music player with Web Audio API');
-console.log('💖 Made with love for Ngô Hằng');
 console.log('✨ Enjoy the animations and effects!');
